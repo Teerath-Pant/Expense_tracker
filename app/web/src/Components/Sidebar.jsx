@@ -1,8 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, BarChart2, IndianRupee, Settings, Menu, Wallet, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Calendar, BarChart2, IndianRupee, Settings, Menu, Wallet, X, LogOut } from "lucide-react";
+import { useAuth } from "./AuthContext";
+import ProfileAvatar from "./ProfileAvatar";
 
 export default function Sidebar({ activeTab, setActiveTab }) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const menuItems = [
@@ -58,6 +62,27 @@ export default function Sidebar({ activeTab, setActiveTab }) {
     );
   };
 
+  const accountSection = user ? (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
+      <p className="px-1 text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">Account</p>
+      <div className="mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5">
+        <ProfileAvatar avatarId={user.avatarId} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-zinc-100">{user.name}</p>
+          <p className="truncate text-xs text-zinc-500">{user.email}</p>
+        </div>
+      </div>
+      <Link
+        to="/logout"
+        onClick={() => setIsOpen(false)}
+        className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-400 transition-colors duration-200 hover:bg-red-500/20"
+      >
+        <LogOut className="h-4 w-4" />
+        Logout
+      </Link>
+    </div>
+  ) : null;
+
   return (
     <>
       {/* Mobile Dashboard Header with Hamburger */}
@@ -98,7 +123,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
               transition={{ type: "spring", damping: 26, stiffness: 220 }}
               className="fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-slate-950/95 border-r border-white/10 p-6 flex flex-col justify-between shadow-2xl backdrop-blur-xl md:hidden"
             >
-              <div>
+              <div className="flex h-full flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-lg font-bold text-white">Menu</h2>
                   <button
@@ -109,7 +134,7 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                   </button>
                 </div>
                 
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-1 flex-col gap-6">
                   {/* Main section */}
                   <div className="flex flex-col gap-1.5 w-full">
                     {menuItems.map(renderItem)}
@@ -125,6 +150,8 @@ export default function Sidebar({ activeTab, setActiveTab }) {
                     </div>
                   </div>
                 </div>
+
+                {accountSection ? <div className="mt-6">{accountSection}</div> : null}
               </div>
             </motion.div>
           </>
@@ -133,23 +160,24 @@ export default function Sidebar({ activeTab, setActiveTab }) {
 
       {/* Desktop Sticky Sidebar */}
       <div className="hidden md:flex w-64 shrink-0 sticky top-6 flex-col gap-4">
-        <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md flex flex-col gap-1.5 w-full">
-          {/* Main items */}
-          <div className="flex flex-col gap-1.5 w-full">
-            {menuItems.map(renderItem)}
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-4 shadow-xl backdrop-blur-md flex min-h-[calc(100vh-8rem)] flex-col w-full">
+          <div className="flex flex-1 flex-col">
+            <div className="flex flex-col gap-1.5 w-full">
+              {menuItems.map(renderItem)}
+            </div>
+
+            <div className="my-3 border-t border-white/5 pt-3">
+              <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest px-4 block mb-2">
+                Manage
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-1.5 w-full">
+              {manageItems.map(renderItem)}
+            </div>
           </div>
 
-          {/* Divider */}
-          <div className="my-3 border-t border-white/5 pt-3">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest px-4 block mb-2">
-              Manage
-            </span>
-          </div>
-
-          {/* Manage items */}
-          <div className="flex flex-col gap-1.5 w-full">
-            {manageItems.map(renderItem)}
-          </div>
+          {accountSection ? <div className="mt-4 pt-4 border-t border-white/5">{accountSection}</div> : null}
         </div>
       </div>
     </>

@@ -33,6 +33,8 @@ const walletOverviewSchema = z.object({
   transfers: z.array(walletTransferSchema),
 });
 
+type WalletOverview = z.infer<typeof walletOverviewSchema>;
+
 const walletMutationSchema = z.object({
   success: z.boolean(),
 });
@@ -67,7 +69,7 @@ const ensureDefaultWallet = async (db: any, userId: string) => {
   return createdWallet;
 };
 
-const buildWalletOverview = async (db: any, userId: string) => {
+const buildWalletOverview = async (db: any, userId: string): Promise<WalletOverview> => {
   await ensureDefaultWallet(db, userId);
 
   const [rawWallets, rawTransfers, rawExpenses] = await Promise.all([

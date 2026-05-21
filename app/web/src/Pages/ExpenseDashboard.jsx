@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../Components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSearchParams } from "react-router-dom";
 import { orpcClient } from "../orpcClient";
 
 // Import custom layouts/components
@@ -12,9 +13,14 @@ import SettingsView from "../Components/SettingsView";
 import AddExpenseModal from "../Components/AddExpenseModal";
 import WalletsView from "../Components/WalletsView";
 
+const dashboardTabs = new Set(["transactions", "stats", "budgets", "wallets", "settings"]);
+
 export default function ExpenseDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("transactions");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab = dashboardTabs.has(requestedTab) ? requestedTab : "transactions";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [expenses, setExpenses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
@@ -32,6 +38,16 @@ export default function ExpenseDashboard() {
   useEffect(() => {
     fetchExpenses();
   }, [user]);
+
+  useEffect(() => {
+    const nextTab = dashboardTabs.has(requestedTab) ? requestedTab : "transactions";
+    setActiveTab(nextTab);
+  }, [requestedTab]);
+
+  const handleTabChange = (nextTab) => {
+    setActiveTab(nextTab);
+    setSearchParams({ tab: nextTab });
+  };
 
   const handleSaveExpense = async (expenseData) => {
     try {
@@ -83,7 +99,7 @@ export default function ExpenseDashboard() {
   return (
     <div className="w-full max-w-none py-4 flex flex-col md:flex-row gap-6 md:gap-8 items-start">
       {/* Sidebar navigation */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <Sidebar activeTab={activeTab} setActiveTab={handleTabChange} />
 
       {/* Main panel content */}
       <div className="flex-1 w-full min-w-0">
@@ -112,7 +128,7 @@ export default function ExpenseDashboard() {
 
             {activeTab === "wallets" && <WalletsView key={user?.id || "wallets"} user={user} />}
 
-            {activeTab === "settings" && <SettingsView />}
+            {activeTab === "settings" && <SettingsView expenses={expenses} />}
           </motion.div>
         </AnimatePresence>
       </div>

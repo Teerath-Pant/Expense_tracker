@@ -28,7 +28,7 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.7",
     "@types/pg": "^8.11.10",
-    "drizzle-kit": "^0.30.2",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }

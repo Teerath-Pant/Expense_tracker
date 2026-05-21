@@ -1,8 +1,56 @@
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
-import { pub, jwt } from "../../orpc.js";
+import { authed, pub, jwt } from "../../orpc.js";
 import { users, wallets } from "../../db/schema.js";
+
+const avatarIdSchema = z.enum([
+  "logo",
+  "emerald-user",
+  "sky-wallet",
+  "amber-bank",
+  "rose-fire",
+  "teal-trend",
+  "violet-spark",
+  "cyan-cash",
+  "slate-shield",
+]);
+type AvatarId = z.infer<typeof avatarIdSchema>;
+
+const normalizeAvatarId = (avatarId: string | null | undefined): AvatarId => {
+  const parsedAvatarId = avatarIdSchema.safeParse(avatarId);
+  return parsedAvatarId.success ? parsedAvatarId.data : "logo";
+};
+
+const authUserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  avatarId: avatarIdSchema,
+});
+
+const authSessionSchema = z.object({
+  token: z.string(),
+  user: authUserSchema,
+});
+
+const signUserSession = (user: z.infer<typeof authUserSchema>) => {
+  const secret = process.env.JWT_SECRET || "super_secret_key_for_expense_tracker_jwt_12345";
+  const token = jwt.sign(
+    {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarId: user.avatarId,
+    },
+    secret
+  );
+
+  return {
+    token,
+    user,
+  };
+};
 
 export const authRouter = {
   register: pub
@@ -13,16 +61,7 @@ export const authRouter = {
         password: z.string().min(6),
       })
     )
-    .output(
-      z.object({
-        token: z.string(),
-        user: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-        }),
-      })
-    )
+    .output(authSessionSchema)
     .handler(async ({ input, context }) => {
       const emailLower = input.email.toLowerCase().trim();
 
@@ -47,6 +86,7 @@ export const authRouter = {
           name: input.name.trim(),
           email: emailLower,
           passwordHash,
+          avatarId: "logo",
         })
         .returning();
 
@@ -63,25 +103,12 @@ export const authRouter = {
         isDefault: true,
       });
 
-      // Generate token
-      const secret = process.env.JWT_SECRET || "super_secret_key_for_expense_tracker_jwt_12345";
-      const token = jwt.sign(
-        {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-        },
-        secret
-      );
-
-      return {
-        token,
-        user: {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-        },
-      };
+      return signUserSession({
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        avatarId: normalizeAvatarId(newUser.avatarId),
+      });
     }),
 
   login: pub
@@ -91,16 +118,7 @@ export const authRouter = {
         password: z.string(),
       })
     )
-    .output(
-      z.object({
-        token: z.string(),
-        user: z.object({
-          id: z.string(),
-          name: z.string(),
-          email: z.string(),
-        }),
-      })
-    )
+    .output(authSessionSchema)
     .handler(async ({ input, context }) => {
       const emailLower = input.email.toLowerCase().trim();
 
@@ -121,24 +139,44 @@ export const authRouter = {
         throw new Error("UNAUTHORIZED: Invalid email or password");
       }
 
-      // Generate token
-      const secret = process.env.JWT_SECRET || "super_secret_key_for_expense_tracker_jwt_12345";
-      const token = jwt.sign(
-        {
-          id: foundUser.id,
-          name: foundUser.name,
-          email: foundUser.email,
-        },
-        secret
-      );
+      return signUserSession({
+        id: foundUser.id,
+        name: foundUser.name,
+        email: foundUser.email,
+        avatarId: normalizeAvatarId(foundUser.avatarId),
+      });
+    }),
 
-      return {
-        token,
-        user: {
-          id: foundUser.id,
-          name: foundUser.name,
-          email: foundUser.email,
-        },
-      };
+  updateProfile: authed
+    .input(
+      z.object({
+        name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
+        avatarId: avatarIdSchema,
+      })
+    )
+    .output(authSessionSchema)
+    .handler(async ({ input, context }) => {
+      const [updatedUser] = await context.db
+        .update(users)
+        .set({
+          name: input.name.trim(),
+          avatarId: input.avatarId,
+        })
+        .where(eq(users.id, context.user.id))
+        .returning({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          avatarId: users.avatarId,
+        });
+
+      if (!updatedUser) {
+        throw new Error("NOT_FOUND: User profile not found");
+      }
+
+      return signUserSession({
+        ...updatedUser,
+        avatarId: normalizeAvatarId(updatedUser.avatarId),
+      });
     }),
 };

@@ -1,6 +1,11 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { orpcClient } from "../orpcClient.js";
 
+const normalizeUser = (nextUser) => ({
+  ...nextUser,
+  avatarId: nextUser?.avatarId || "logo",
+});
+
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -14,7 +19,7 @@ export function AuthProvider({ children }) {
 
     if (activeUser && activeToken) {
       try {
-        setUser(JSON.parse(activeUser));
+        setUser(normalizeUser(JSON.parse(activeUser)));
       } catch (e) {
         localStorage.removeItem("expense_tracker_current_user");
         localStorage.removeItem("expense_tracker_token");
@@ -31,9 +36,10 @@ export function AuthProvider({ children }) {
         password,
       });
 
-      setUser(res.user);
+      const nextUser = normalizeUser(res.user);
+      setUser(nextUser);
       localStorage.setItem("expense_tracker_token", res.token);
-      localStorage.setItem("expense_tracker_current_user", JSON.stringify(res.user));
+      localStorage.setItem("expense_tracker_current_user", JSON.stringify(nextUser));
 
       return { success: true };
     } catch (error) {
@@ -51,9 +57,10 @@ export function AuthProvider({ children }) {
         password,
       });
 
-      setUser(res.user);
+      const nextUser = normalizeUser(res.user);
+      setUser(nextUser);
       localStorage.setItem("expense_tracker_token", res.token);
-      localStorage.setItem("expense_tracker_current_user", JSON.stringify(res.user));
+      localStorage.setItem("expense_tracker_current_user", JSON.stringify(nextUser));
 
       return { success: true };
     } catch (error) {
@@ -70,8 +77,29 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("expense_tracker_current_user");
   };
 
+  const updateProfile = async ({ name, avatarId }) => {
+    try {
+      const res = await orpcClient.auth.updateProfile({
+        name: name.trim(),
+        avatarId: avatarId || user?.avatarId || "logo",
+      });
+
+      const nextUser = normalizeUser(res.user);
+      setUser(nextUser);
+      localStorage.setItem("expense_tracker_token", res.token);
+      localStorage.setItem("expense_tracker_current_user", JSON.stringify(nextUser));
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message || "Unable to update your profile.",
+      };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, register, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, register, login, logout, updateProfile, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

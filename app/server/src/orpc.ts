@@ -14,6 +14,7 @@ export interface UserContext {
     id: string;
     name: string;
     email: string;
+    avatarId: string;
   };
 }
 
@@ -73,6 +74,7 @@ export const authMiddleware = pub.middleware(async ({ next, context }) => {
         id: decoded.id,
         name: decoded.name,
         email: decoded.email,
+        avatarId: decoded.avatarId || "logo",
       },
     },
   });

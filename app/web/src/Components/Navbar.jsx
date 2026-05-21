@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
-import { Menu, X, LogOut, LayoutDashboard, User } from "lucide-react";
+import { Menu, X, LayoutDashboard } from "lucide-react";
 import logo from "../assets/logo.png";
 
 function Navbar() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -31,23 +30,10 @@ function Navbar() {
 
           {user ? (
             <>
-              <Link to="/dashboard" className="flex items-center gap-1.5 transition-colors duration-200 hover:text-emerald-300">
+              <Link to="/dashboard?tab=transactions" className="flex items-center gap-1.5 transition-colors duration-200 hover:text-emerald-300">
                 <LayoutDashboard className="h-4 w-4 text-emerald-400" />
                 Dashboard
               </Link>
-              <div className="flex items-center gap-2 border-l border-white/20 pl-6">
-                <span className="flex items-center gap-1 text-zinc-300 bg-white/5 border border-white/5 rounded-full px-3 py-1 text-xs">
-                  <User className="h-3.5 w-3.5 text-emerald-400" />
-                  {user.name}
-                </span>
-                <Link
-                  to="/logout"
-                  className="flex items-center gap-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-full px-4 py-1.5 transition-colors duration-200 font-semibold"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Logout
-                </Link>
-              </div>
             </>
           ) : (
             <>
@@ -94,30 +80,13 @@ function Navbar() {
           {user ? (
             <>
               <Link
-                to="/dashboard"
+                to="/dashboard?tab=transactions"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 py-2 text-base font-semibold text-zinc-200 hover:text-emerald-300 transition-colors"
               >
                 <LayoutDashboard className="h-5 w-5 text-emerald-400" />
                 Dashboard
               </Link>
-              <div className="border-t border-white/10 pt-4 mt-2">
-                <p className="text-xs text-zinc-400 uppercase tracking-wider mb-3">Logged In As</p>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-zinc-200 font-semibold">
-                    <User className="h-4 w-4 text-emerald-400" />
-                    {user.name}
-                  </span>
-                  <Link
-                    to="/logout"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 rounded-xl px-4 py-2 font-bold text-sm transition"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </Link>
-                </div>
-              </div>
             </>
           ) : (
             <>
