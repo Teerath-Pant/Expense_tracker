@@ -2,7 +2,7 @@ import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 
 const link = new RPCLink({
-  url: "http://localhost:4000/rpc",
+  url: `${import.meta.env.VITE_SERVER_URL || ""}/rpc`,  // ✅ dynamic
   headers: () => {
     const token = localStorage.getItem("expense_tracker_token");
     return {
