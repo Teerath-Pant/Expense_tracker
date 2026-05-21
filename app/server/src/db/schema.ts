@@ -7,6 +7,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   avatarId: text("avatar_id").notNull().default("logo"),
+  customAvatarData: text("custom_avatar_data"),
+  preferredCurrency: text("preferred_currency").notNull().default("INR"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,10 +54,25 @@ export const walletTransfers = pgTable("wallet_transfers", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const recurringTransactions = pgTable("recurring_transactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  category: text("category").notNull(),
+  type: text("type").notNull(),
+  frequency: text("frequency").notNull(),
+  nextDate: text("next_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   expenses: many(expenses),
   wallets: many(wallets),
   walletTransfers: many(walletTransfers),
+  recurringTransactions: many(recurringTransactions),
 }));
 
 export const expensesRelations = relations(expenses, ({ one }) => ({
@@ -88,5 +105,12 @@ export const walletTransfersRelations = relations(walletTransfers, ({ one }) => 
     relationName: "wallet_transfer_to",
     fields: [walletTransfers.toWalletId],
     references: [wallets.id],
+  }),
+}));
+
+export const recurringTransactionsRelations = relations(recurringTransactions, ({ one }) => ({
+  user: one(users, {
+    fields: [recurringTransactions.userId],
+    references: [users.id],
   }),
 }));

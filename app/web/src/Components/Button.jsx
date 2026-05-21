@@ -7,7 +7,7 @@ function Button() {
   return (
     <div className="mt-8 flex flex-wrap items-center gap-4">
       <Link
-        to={user ? "/dashboard" : "/login"}
+        to={user ? "/dashboard/transactions" : "/login"}
         className="rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-950/30 transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-200 cursor-pointer"
       >
         Track Your Expenses

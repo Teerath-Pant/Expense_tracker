@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../Components/AuthContext";
+import ServerStatus from "../Components/ServerStatus";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
 
@@ -35,7 +36,7 @@ export default function Register() {
     try {
       const res = await register(name, email, password);
       if (res.success) {
-        navigate("/dashboard");
+        navigate("/dashboard/transactions");
       } else {
         setError(res.message);
       }
@@ -74,6 +75,8 @@ export default function Register() {
             Sign up to start tracking your finances today
           </p>
         </div>
+
+        <ServerStatus />
 
         <AnimatePresence mode="wait">
           {error && (

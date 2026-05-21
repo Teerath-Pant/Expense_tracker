@@ -22,14 +22,14 @@ function ProtectedRoute({ children }) {
 function PublicRoute({ children }) {
   const { user } = useAuth();
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard/transactions" replace />;
   }
   return children;
 }
 
 function MainLayout() {
   const location = useLocation();
-  const isDashboard = location.pathname === "/dashboard";
+  const isDashboard = location.pathname.startsWith("/dashboard");
 
   return (
     <div className="relative min-h-screen overflow-x-hidden text-white">
@@ -70,8 +70,9 @@ function MainLayout() {
               }
             />
             <Route path="/logout" element={<Logout />} />
+            <Route path="/dashboard" element={<Navigate to="/dashboard/transactions" replace />} />
             <Route
-              path="/dashboard"
+              path="/dashboard/:tab"
               element={
                 <ProtectedRoute>
                   <ExpenseDashboard />

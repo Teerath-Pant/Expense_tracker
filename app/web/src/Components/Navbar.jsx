@@ -30,7 +30,7 @@ function Navbar() {
 
           {user ? (
             <>
-              <Link to="/dashboard?tab=transactions" className="flex items-center gap-1.5 transition-colors duration-200 hover:text-emerald-300">
+              <Link to="/dashboard/transactions" className="flex items-center gap-1.5 transition-colors duration-200 hover:text-emerald-300">
                 <LayoutDashboard className="h-4 w-4 text-emerald-400" />
                 Dashboard
               </Link>
@@ -80,7 +80,7 @@ function Navbar() {
           {user ? (
             <>
               <Link
-                to="/dashboard?tab=transactions"
+                to="/dashboard/transactions"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 py-2 text-base font-semibold text-zinc-200 hover:text-emerald-300 transition-colors"
               >

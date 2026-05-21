@@ -14,6 +14,7 @@ const avatarIdSchema = z.enum([
   "violet-spark",
   "cyan-cash",
   "slate-shield",
+  "custom",
 ]);
 type AvatarId = z.infer<typeof avatarIdSchema>;
 
@@ -27,6 +28,8 @@ const authUserSchema = z.object({
   name: z.string(),
   email: z.string(),
   avatarId: avatarIdSchema,
+  customAvatarData: z.string().nullable(),
+  preferredCurrency: z.enum(["INR", "USD", "EUR", "GBP"]),
 });
 
 const authSessionSchema = z.object({
@@ -42,6 +45,8 @@ const signUserSession = (user: z.infer<typeof authUserSchema>) => {
       name: user.name,
       email: user.email,
       avatarId: user.avatarId,
+      customAvatarData: user.customAvatarData,
+      preferredCurrency: user.preferredCurrency,
     },
     secret
   );
@@ -87,6 +92,7 @@ export const authRouter = {
           email: emailLower,
           passwordHash,
           avatarId: "logo",
+          preferredCurrency: "INR",
         })
         .returning();
 
@@ -108,6 +114,8 @@ export const authRouter = {
         name: newUser.name,
         email: newUser.email,
         avatarId: normalizeAvatarId(newUser.avatarId),
+        customAvatarData: newUser.customAvatarData || null,
+        preferredCurrency: (newUser.preferredCurrency as "INR" | "USD" | "EUR" | "GBP") || "INR",
       });
     }),
 
@@ -144,6 +152,8 @@ export const authRouter = {
         name: foundUser.name,
         email: foundUser.email,
         avatarId: normalizeAvatarId(foundUser.avatarId),
+        customAvatarData: foundUser.customAvatarData || null,
+        preferredCurrency: (foundUser.preferredCurrency as "INR" | "USD" | "EUR" | "GBP") || "INR",
       });
     }),
 
@@ -152,6 +162,8 @@ export const authRouter = {
       z.object({
         name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
         avatarId: avatarIdSchema,
+        customAvatarData: z.string().max(250_000).nullable().optional(),
+        preferredCurrency: z.enum(["INR", "USD", "EUR", "GBP"]),
       })
     )
     .output(authSessionSchema)
@@ -161,6 +173,8 @@ export const authRouter = {
         .set({
           name: input.name.trim(),
           avatarId: input.avatarId,
+          customAvatarData: input.customAvatarData || null,
+          preferredCurrency: input.preferredCurrency,
         })
         .where(eq(users.id, context.user.id))
         .returning({
@@ -168,6 +182,8 @@ export const authRouter = {
           name: users.name,
           email: users.email,
           avatarId: users.avatarId,
+          customAvatarData: users.customAvatarData,
+          preferredCurrency: users.preferredCurrency,
         });
 
       if (!updatedUser) {
@@ -177,6 +193,66 @@ export const authRouter = {
       return signUserSession({
         ...updatedUser,
         avatarId: normalizeAvatarId(updatedUser.avatarId),
+        customAvatarData: updatedUser.customAvatarData || null,
+        preferredCurrency: (updatedUser.preferredCurrency as "INR" | "USD" | "EUR" | "GBP") || "INR",
       });
+    }),
+
+  changePassword: authed
+    .input(
+      z.object({
+        currentPassword: z.string().min(1),
+        newPassword: z.string().min(6),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .handler(async ({ input, context }) => {
+      const [foundUser] = await context.db
+        .select()
+        .from(users)
+        .where(eq(users.id, context.user.id))
+        .limit(1);
+
+      if (!foundUser) {
+        throw new Error("NOT_FOUND: User profile not found");
+      }
+
+      const isMatch = await bcrypt.compare(input.currentPassword, foundUser.passwordHash);
+      if (!isMatch) {
+        throw new Error("UNAUTHORIZED: Current password is incorrect");
+      }
+
+      const passwordHash = await bcrypt.hash(input.newPassword, 10);
+      await context.db.update(users).set({ passwordHash }).where(eq(users.id, context.user.id));
+
+      return { success: true };
+    }),
+
+  deleteAccount: authed
+    .input(
+      z.object({
+        password: z.string().min(1),
+      })
+    )
+    .output(z.object({ success: z.boolean() }))
+    .handler(async ({ input, context }) => {
+      const [foundUser] = await context.db
+        .select()
+        .from(users)
+        .where(eq(users.id, context.user.id))
+        .limit(1);
+
+      if (!foundUser) {
+        throw new Error("NOT_FOUND: User profile not found");
+      }
+
+      const isMatch = await bcrypt.compare(input.password, foundUser.passwordHash);
+      if (!isMatch) {
+        throw new Error("UNAUTHORIZED: Password is incorrect");
+      }
+
+      await context.db.delete(users).where(eq(users.id, context.user.id));
+
+      return { success: true };
     }),
 };

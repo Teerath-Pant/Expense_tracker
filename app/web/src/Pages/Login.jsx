@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../Components/AuthContext";
+import ServerStatus from "../Components/ServerStatus";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, ArrowRight } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function Login() {
     try {
       const res = await login(email, password);
       if (res.success) {
-        navigate("/dashboard");
+        navigate("/dashboard/transactions");
       } else {
         setError(res.message);
       }
@@ -61,6 +62,8 @@ export default function Login() {
             Sign in to track and manage your expenses
           </p>
         </div>
+
+        <ServerStatus />
 
         <AnimatePresence mode="wait">
           {error && (

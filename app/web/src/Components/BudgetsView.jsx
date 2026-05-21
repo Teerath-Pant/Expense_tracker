@@ -76,15 +76,19 @@ export default function BudgetsView({ expenses, user }) {
 
             let barColor = "bg-emerald-500";
             let textColor = "text-emerald-400";
-            let glowColor = "shadow-emerald-500/10";
+            let alertLabel = "On track";
             if (percentage > 100) {
               barColor = "bg-rose-500";
               textColor = "text-rose-400";
-              glowColor = "shadow-rose-500/10";
-            } else if (percentage > 75) {
+              alertLabel = "Over budget";
+            } else if (percentage >= 90) {
+              barColor = "bg-orange-500";
+              textColor = "text-orange-400";
+              alertLabel = "90% used";
+            } else if (percentage >= 70) {
               barColor = "bg-amber-500";
               textColor = "text-amber-400";
-              glowColor = "shadow-amber-500/10";
+              alertLabel = "70% used";
             }
 
             return (
@@ -97,6 +101,9 @@ export default function BudgetsView({ expenses, user }) {
                   <div className="flex justify-between items-center">
                     <div>
                       <h4 className="font-bold text-white text-base">{category}</h4>
+                      <span className={`mt-2 inline-flex rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-bold uppercase ${textColor}`}>
+                        {alertLabel}
+                      </span>
                       <p className="text-xs text-zinc-500 mt-0.5">Monthly Limit: ₹{limit}</p>
                     </div>
                     <div className="text-right">
@@ -175,7 +182,7 @@ export default function BudgetsView({ expenses, user }) {
               </div>
               <h3 className="text-base font-bold text-white">Smart Budget Warnings</h3>
               <p className="text-sm text-zinc-400 leading-relaxed">
-                Categories exceeding **75%** of their monthly budget limits will display a warning yellow alert, while those exceeding **100%** will glow red.
+                Categories show alerts at 70%, 90%, and 100% of their monthly budget limits.
               </p>
             </div>
           )}

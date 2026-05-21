@@ -4,12 +4,16 @@ import {
   CalendarDays,
   Check,
   CheckCircle,
+  Download,
   Flame,
+  KeyRound,
   Mail,
   Pencil,
   Shield,
   TrendingUp,
+  Upload,
   User,
+  UserX,
   X,
 } from "lucide-react";
 import { useAuth } from "./AuthContext";
@@ -63,10 +67,12 @@ const getLongestStreak = (activityDates) => {
 };
 
 export default function SettingsView({ expenses = [] }) {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, changePassword, deleteAccount } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(user?.name || "");
   const [saveState, setSaveState] = useState({ status: "idle", message: "" });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
+  const [deletePassword, setDeletePassword] = useState("");
 
   useEffect(() => {
     setNameDraft(user?.name || "");
@@ -145,7 +151,12 @@ export default function SettingsView({ expenses = [] }) {
     }
 
     setSaveState({ status: "saving", message: "" });
-    const result = await updateProfile({ name: nextName, avatarId: user?.avatarId || "logo" });
+    const result = await updateProfile({
+      name: nextName,
+      avatarId: user?.avatarId || "logo",
+      customAvatarData: user?.customAvatarData || null,
+      preferredCurrency: user?.preferredCurrency || "INR",
+    });
 
     if (!result.success) {
       setSaveState({ status: "error", message: result.message });
@@ -162,7 +173,12 @@ export default function SettingsView({ expenses = [] }) {
     }
 
     setSaveState({ status: "saving", message: "" });
-    const result = await updateProfile({ name: user?.name || nameDraft, avatarId });
+    const result = await updateProfile({
+      name: user?.name || nameDraft,
+      avatarId,
+      customAvatarData: user?.customAvatarData || null,
+      preferredCurrency: user?.preferredCurrency || "INR",
+    });
 
     if (!result.success) {
       setSaveState({ status: "error", message: result.message });
@@ -170,6 +186,74 @@ export default function SettingsView({ expenses = [] }) {
     }
 
     setSaveState({ status: "success", message: "Avatar updated." });
+  };
+
+  const handleCustomAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const result = await updateProfile({
+        name: user?.name || nameDraft,
+        avatarId: "custom",
+        customAvatarData: String(reader.result),
+        preferredCurrency: user?.preferredCurrency || "INR",
+      });
+
+      setSaveState(result.success ? { status: "success", message: "Custom avatar updated." } : { status: "error", message: result.message });
+    };
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  };
+
+  const handleCurrencyChange = async (preferredCurrency) => {
+    const result = await updateProfile({
+      name: user?.name || nameDraft,
+      avatarId: user?.avatarId || "logo",
+      customAvatarData: user?.customAvatarData || null,
+      preferredCurrency,
+    });
+
+    setSaveState(result.success ? { status: "success", message: "Currency preference updated." } : { status: "error", message: result.message });
+  };
+
+  const handlePasswordChange = async (event) => {
+    event.preventDefault();
+    const result = await changePassword(passwordForm);
+
+    if (result.success) {
+      setPasswordForm({ currentPassword: "", newPassword: "" });
+      setSaveState({ status: "success", message: "Password updated." });
+      return;
+    }
+
+    setSaveState({ status: "error", message: result.message });
+  };
+
+  const handleDeleteAccount = async (event) => {
+    event.preventDefault();
+    if (!window.confirm("Delete your account and all stored data?")) return;
+
+    const result = await deleteAccount({ password: deletePassword });
+    if (!result.success) {
+      setSaveState({ status: "error", message: result.message });
+    }
+  };
+
+  const handleExportData = () => {
+    const payload = {
+      user,
+      expenses,
+      exportedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "expense-tracker-data.json";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleCancelNameEdit = () => {
@@ -217,7 +301,7 @@ export default function SettingsView({ expenses = [] }) {
       <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-xl backdrop-blur-md space-y-6">
         <div className="flex flex-col gap-5 border-b border-white/10 pb-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <ProfileAvatar avatarId={user?.avatarId} size="lg" className="shadow-lg shadow-emerald-950/20" />
+            <ProfileAvatar avatarId={user?.avatarId} customAvatarData={user?.customAvatarData} size="lg" className="shadow-lg shadow-emerald-950/20" />
             <div className="min-w-0">
               {isEditingName ? (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -297,6 +381,24 @@ export default function SettingsView({ expenses = [] }) {
               Active Session Verified
             </p>
           </div>
+
+          <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-1">
+            <span className="text-xs uppercase text-zinc-500 font-semibold tracking-wider flex items-center gap-1.5">
+              <BadgeDollarSign className="h-3.5 w-3.5 text-sky-400" />
+              Currency
+            </span>
+            <select
+              value={user?.preferredCurrency || "INR"}
+              onChange={(event) => handleCurrencyChange(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm font-bold text-zinc-200 outline-none"
+            >
+              {["INR", "USD", "EUR", "GBP"].map((currency) => (
+                <option key={currency} value={currency} className="bg-slate-900 text-white">
+                  {currency}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="border-t border-white/10 pt-6">
@@ -322,7 +424,7 @@ export default function SettingsView({ expenses = [] }) {
                   } disabled:cursor-not-allowed disabled:opacity-60`}
                   title={avatar.label}
                 >
-                  <ProfileAvatar avatarId={avatar.id} />
+                  <ProfileAvatar avatarId={avatar.id} customAvatarData={user?.customAvatarData} />
                   <span className={`text-[11px] font-semibold ${isSelected ? "text-emerald-300" : "text-zinc-500 group-hover:text-zinc-300"}`}>
                     {avatar.label}
                   </span>
@@ -330,6 +432,71 @@ export default function SettingsView({ expenses = [] }) {
               );
             })}
           </div>
+          <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-zinc-200 transition hover:bg-white/10">
+            <Upload className="h-4 w-4 text-emerald-300" />
+            Upload custom avatar
+            <input type="file" accept="image/*" onChange={handleCustomAvatarUpload} className="hidden" />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 border-t border-white/10 pt-6 xl:grid-cols-3">
+          <form onSubmit={handlePasswordChange} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-white">
+              <KeyRound className="h-4 w-4 text-emerald-300" />
+              Change Password
+            </div>
+            <div className="space-y-3">
+              <input
+                type="password"
+                value={passwordForm.currentPassword}
+                onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })}
+                placeholder="Current password"
+                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
+              />
+              <input
+                type="password"
+                value={passwordForm.newPassword}
+                onChange={(event) => setPasswordForm({ ...passwordForm, newPassword: event.target.value })}
+                placeholder="New password"
+                className="w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm text-white outline-none"
+              />
+              <button className="w-full rounded-xl bg-emerald-500 px-3 py-2 text-sm font-bold text-slate-950 transition hover:bg-emerald-400">
+                Save Password
+              </button>
+            </div>
+          </form>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-white">
+              <Download className="h-4 w-4 text-teal-300" />
+              Export Data
+            </div>
+            <p className="mb-4 text-xs text-zinc-500">Download your profile and transactions as JSON.</p>
+            <button
+              type="button"
+              onClick={handleExportData}
+              className="w-full rounded-xl border border-teal-500/20 bg-teal-500/10 px-3 py-2 text-sm font-bold text-teal-300 transition hover:bg-teal-500/20"
+            >
+              Export Account Data
+            </button>
+          </div>
+
+          <form onSubmit={handleDeleteAccount} className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-rose-200">
+              <UserX className="h-4 w-4" />
+              Delete Account
+            </div>
+            <input
+              type="password"
+              value={deletePassword}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              placeholder="Confirm password"
+              className="mb-3 w-full rounded-xl border border-rose-500/20 bg-black/20 px-3 py-2 text-sm text-white outline-none"
+            />
+            <button className="w-full rounded-xl bg-rose-500 px-3 py-2 text-sm font-bold text-white transition hover:bg-rose-400">
+              Delete Account
+            </button>
+          </form>
         </div>
       </div>
 

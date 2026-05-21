@@ -56,6 +56,12 @@ export const AVATAR_OPTIONS = [
     icon: Shield,
     className: "border-zinc-300/20 bg-zinc-500/15 text-zinc-200",
   },
+  {
+    id: "custom",
+    label: "Custom",
+    icon: UserRound,
+    className: "border-emerald-400/30 bg-emerald-500/15 text-emerald-300",
+  },
 ];
 
 export const AVATAR_IDS = AVATAR_OPTIONS.map((avatar) => avatar.id);
@@ -63,17 +69,20 @@ export const AVATAR_IDS = AVATAR_OPTIONS.map((avatar) => avatar.id);
 export const getAvatarOption = (avatarId) =>
   AVATAR_OPTIONS.find((avatar) => avatar.id === avatarId) || AVATAR_OPTIONS[0];
 
-export default function ProfileAvatar({ avatarId = "logo", size = "md", className = "" }) {
+export default function ProfileAvatar({ avatarId = "logo", customAvatarData = null, size = "md", className = "" }) {
   const avatar = getAvatarOption(avatarId);
   const Icon = avatar.icon;
   const sizeClass = size === "lg" ? "h-16 w-16 p-1.5" : "h-9 w-9 p-1";
   const iconSizeClass = size === "lg" ? "h-7 w-7" : "h-4 w-4";
+  const shouldUseCustomAvatar = avatarId === "custom" && customAvatarData;
 
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border ${sizeClass} ${avatar.className} ${className}`}
     >
-      {avatar.type === "logo" ? (
+      {shouldUseCustomAvatar ? (
+        <img src={customAvatarData} alt="Custom profile" className="h-full w-full rounded-full object-cover" />
+      ) : avatar.type === "logo" ? (
         <img src={logo} alt="Expense Tracker profile" className="h-full w-full rounded-full object-contain" />
       ) : (
         <Icon className={iconSizeClass} />

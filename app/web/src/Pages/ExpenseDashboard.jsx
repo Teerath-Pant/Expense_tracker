@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../Components/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { orpcClient } from "../orpcClient";
 
 // Import custom layouts/components
@@ -17,11 +17,12 @@ const dashboardTabs = new Set(["transactions", "stats", "budgets", "wallets", "s
 
 export default function ExpenseDashboard() {
   const { user } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedTab = searchParams.get("tab");
+  const navigate = useNavigate();
+  const { tab: requestedTab } = useParams();
   const initialTab = dashboardTabs.has(requestedTab) ? requestedTab : "transactions";
   const [activeTab, setActiveTab] = useState(initialTab);
   const [expenses, setExpenses] = useState([]);
+  const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
 
@@ -35,18 +36,32 @@ export default function ExpenseDashboard() {
     }
   };
 
+  const fetchRecurringTransactions = async () => {
+    if (!user) return;
+    try {
+      const data = await orpcClient.recurring.list({});
+      setRecurringTransactions(data);
+    } catch (err) {
+      console.error("Failed to load recurring transactions:", err);
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
+    fetchRecurringTransactions();
   }, [user]);
 
   useEffect(() => {
     const nextTab = dashboardTabs.has(requestedTab) ? requestedTab : "transactions";
     setActiveTab(nextTab);
-  }, [requestedTab]);
+    if (!dashboardTabs.has(requestedTab)) {
+      navigate("/dashboard/transactions", { replace: true });
+    }
+  }, [navigate, requestedTab]);
 
   const handleTabChange = (nextTab) => {
     setActiveTab(nextTab);
-    setSearchParams({ tab: nextTab });
+    navigate(`/dashboard/${nextTab}`);
   };
 
   const handleSaveExpense = async (expenseData) => {
@@ -74,6 +89,31 @@ export default function ExpenseDashboard() {
       setIsModalOpen(false);
     } catch (err) {
       console.error("Failed to save transaction:", err);
+    }
+  };
+
+  const handleSaveRecurring = async (recurringData) => {
+    try {
+      await orpcClient.recurring.create({
+        title: recurringData.title,
+        amount: Number(recurringData.amount),
+        category: recurringData.category,
+        type: recurringData.type,
+        frequency: recurringData.frequency,
+        nextDate: recurringData.nextDate,
+      });
+      fetchRecurringTransactions();
+    } catch (err) {
+      console.error("Failed to save recurring transaction:", err);
+    }
+  };
+
+  const handleDeleteRecurring = async (id) => {
+    try {
+      await orpcClient.recurring.delete({ id });
+      fetchRecurringTransactions();
+    } catch (err) {
+      console.error("Failed to delete recurring transaction:", err);
     }
   };
 
@@ -118,6 +158,9 @@ export default function ExpenseDashboard() {
                 onDeleteExpense={handleDeleteExpense}
                 onEditClick={handleEditClick}
                 onAddClick={handleAddClick}
+                onSaveRecurring={handleSaveRecurring}
+                onDeleteRecurring={handleDeleteRecurring}
+                recurringTransactions={recurringTransactions}
                 user={user}
               />
             )}

@@ -4,7 +4,17 @@ import { orpcClient } from "../orpcClient.js";
 const normalizeUser = (nextUser) => ({
   ...nextUser,
   avatarId: nextUser?.avatarId || "logo",
+  customAvatarData: nextUser?.customAvatarData || null,
+  preferredCurrency: nextUser?.preferredCurrency || "INR",
 });
+
+const formatAuthError = (error, fallback) => {
+  if (error?.message === "Failed to fetch") {
+    return "Backend server is offline. Start the server on port 4000 and try again.";
+  }
+
+  return error?.message || fallback;
+};
 
 const AuthContext = createContext(null);
 
@@ -45,7 +55,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return {
         success: false,
-        message: error.message || "An error occurred during registration.",
+        message: formatAuthError(error, "An error occurred during registration."),
       };
     }
   };
@@ -66,7 +76,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return {
         success: false,
-        message: error.message || "Invalid email or password.",
+        message: formatAuthError(error, "Invalid email or password."),
       };
     }
   };
@@ -77,11 +87,13 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("expense_tracker_current_user");
   };
 
-  const updateProfile = async ({ name, avatarId }) => {
+  const updateProfile = async ({ name, avatarId, customAvatarData, preferredCurrency }) => {
     try {
       const res = await orpcClient.auth.updateProfile({
         name: name.trim(),
         avatarId: avatarId || user?.avatarId || "logo",
+        customAvatarData: customAvatarData ?? user?.customAvatarData ?? null,
+        preferredCurrency: preferredCurrency || user?.preferredCurrency || "INR",
       });
 
       const nextUser = normalizeUser(res.user);
@@ -93,13 +105,38 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return {
         success: false,
-        message: error.message || "Unable to update your profile.",
+        message: formatAuthError(error, "Unable to update your profile."),
+      };
+    }
+  };
+
+  const changePassword = async ({ currentPassword, newPassword }) => {
+    try {
+      await orpcClient.auth.changePassword({ currentPassword, newPassword });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: formatAuthError(error, "Unable to update your password."),
+      };
+    }
+  };
+
+  const deleteAccount = async ({ password }) => {
+    try {
+      await orpcClient.auth.deleteAccount({ password });
+      logout();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: formatAuthError(error, "Unable to delete your account."),
       };
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout, updateProfile, loading }}>
+    <AuthContext.Provider value={{ user, register, login, logout, updateProfile, changePassword, deleteAccount, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

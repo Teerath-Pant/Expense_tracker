@@ -9,6 +9,10 @@ dotenv.config();
 
 const app = express();
 
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, service: "expense-tracker-server" });
+});
+
 // Standard CORS setup
 app.use(
   cors({

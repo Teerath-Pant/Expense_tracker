@@ -15,6 +15,8 @@ export interface UserContext {
     name: string;
     email: string;
     avatarId: string;
+    customAvatarData?: string | null;
+    preferredCurrency: string;
   };
 }
 
@@ -75,6 +77,8 @@ export const authMiddleware = pub.middleware(async ({ next, context }) => {
         name: decoded.name,
         email: decoded.email,
         avatarId: decoded.avatarId || "logo",
+        customAvatarData: decoded.customAvatarData || null,
+        preferredCurrency: decoded.preferredCurrency || "INR",
       },
     },
   });
