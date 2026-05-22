@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc --outDir dist",
     "start": "node dist/index.js",
     "test": "npm run build",
     "db:generate": "drizzle-kit generate",
