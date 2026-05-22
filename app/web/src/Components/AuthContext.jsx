@@ -10,7 +10,7 @@ const normalizeUser = (nextUser) => ({
 
 const formatAuthError = (error, fallback) => {
   if (error?.message === "Failed to fetch") {
-    return "Backend server is offline. Start the server on port 4000 and try again.";
+    return "Backend server is offline. Please verify the connection and try again.";
   }
 
   return error?.message || fallback;

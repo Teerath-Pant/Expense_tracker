@@ -6,8 +6,10 @@ export default function ServerStatus() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const serverUrl = import.meta.env.VITE_SERVER_URL || "";
+    const healthUrl = serverUrl ? `${serverUrl}/health` : "/health";
 
-    fetch("http://localhost:4000/health", { signal: controller.signal })
+    fetch(healthUrl, { signal: controller.signal })
       .then((response) => setStatus(response.ok ? "online" : "offline"))
       .catch(() => setStatus("offline"));
 
@@ -29,7 +31,7 @@ export default function ServerStatus() {
       }`}
     >
       {isOnline ? <CheckCircle2 className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
-      <span>{isOnline ? "Backend connected" : "Backend server is offline. Start the server on port 4000."}</span>
+      <span>{isOnline ? "Backend connected" : "Backend server is offline."}</span>
     </div>
   );
 }
