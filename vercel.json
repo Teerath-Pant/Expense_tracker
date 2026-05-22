@@ -1,26 +1,13 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "app/web/dist",
   "builds": [
     {
-      "src": "app/server/dist/index.js",
-      "use": "@vercel/node"
+      "src": "app/web/package.json",
+      "use": "@vercel/static-build",
+      "config": { "distDir": "dist" }
     }
   ],
   "routes": [
-    {
-      "src": "/rpc/(.*)",
-      "dest": "/app/server/dist/index.js"
-    },
-    {
-      "src": "/health",
-      "dest": "/app/server/dist/index.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/app/server/dist/index.js"
-    },
     {
       "src": "/(.*)",
       "dest": "/app/web/dist/index.html"
