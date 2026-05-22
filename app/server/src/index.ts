@@ -57,7 +57,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Monolithic Server running on http://localhost:${PORT}`);
   console.log(`🔌 oRPC Endpoint mounted at http://localhost:${PORT}/rpc`);
