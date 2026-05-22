@@ -10,6 +10,14 @@
   ],
   "routes": [
     {
+      "src": "/rpc/(.*)",
+      "dest": "/app/server/dist/index.js"
+    },
+    {
+      "src": "/health",
+      "dest": "/app/server/dist/index.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/app/server/dist/index.js"
     },
