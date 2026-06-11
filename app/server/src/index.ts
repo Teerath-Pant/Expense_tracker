@@ -4,13 +4,14 @@ import * as dotenv from "dotenv";
 import { RPCHandler } from "@orpc/server/node";
 import { appRouter } from "./orpc/routers/_app.js";
 import { db } from "./db/index.js";
+import morgan from "morgan"; 
 
 dotenv.config();
 
 const app = express();
 
 
-
+app.use(morgan("dev")); 
 // Standard CORS setup
 app.use(
   cors({
@@ -46,8 +47,9 @@ app.use(async (req, res, next) => {
     if (matched) {
       return;
     }
-  } catch (error) {
-    console.error("Error handling oRPC request:", error);
+  }  catch (error) {
+    console.error("❌ FULL ERROR:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+    console.error("❌ ERROR STACK:", error);
     if (!res.headersSent) {
       res.status(500).json({ error: "Internal Server Error" });
     }
