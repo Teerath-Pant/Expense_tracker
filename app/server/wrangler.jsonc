@@ -1,0 +1,17 @@
+{
+  "name": "expense-tracker-server",
+  "main": "src/worker.ts",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "expense-tracker-db",
+      "database_id": "a528ed1b-f9b0-450f-be87-efec36b17653",
+      "migrations_dir": "migrations"
+    }
+  ]
+  // Secret: JWT_SECRET (wrangler secret put JWT_SECRET)
+  // Optional var: ALLOWED_ORIGIN = your Vercel URL
+}

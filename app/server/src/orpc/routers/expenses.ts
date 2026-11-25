@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { eq, and, ilike, desc } from "drizzle-orm";
+import { eq, and, like, desc } from "drizzle-orm";
 import { authed } from "../../orpc.js";
 import { expenses } from "../../db/schema.js";
 
@@ -29,7 +29,7 @@ export const expensesRouter = {
       const conditions = [eq(expenses.userId, context.user.id)];
 
       if (input.search) {
-        conditions.push(ilike(expenses.title, `%${input.search}%`));
+        conditions.push(like(expenses.title, `%${input.search}%`));
       }
       if (input.category && input.category !== "All") {
         conditions.push(eq(expenses.category, input.category));

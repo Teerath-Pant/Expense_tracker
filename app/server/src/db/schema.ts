@@ -1,71 +1,77 @@
 import { relations } from "drizzle-orm";
-import { boolean, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
+// D1 (SQLite) helpers. Amounts stay as 2-decimal strings, same as old numeric columns.
+const id = () => text("id").primaryKey().$defaultFn(() => crypto.randomUUID());
+const createdAt = () =>
+  integer("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date());
+const amount = (name: string) => text(name).notNull();
+
+export const users = sqliteTable("users", {
+  id: id(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   avatarId: text("avatar_id").notNull().default("logo"),
   customAvatarData: text("custom_avatar_data"),
   preferredCurrency: text("preferred_currency").notNull().default("INR"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: createdAt(),
 });
 
-export const expenses = pgTable("expenses", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+export const expenses = sqliteTable("expenses", {
+  id: id(),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: amount("amount"),
   category: text("category").notNull(),
   type: text("type").notNull(),
   date: text("date").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: createdAt(),
 });
 
-export const wallets = pgTable("wallets", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+export const wallets = sqliteTable("wallets", {
+  id: id(),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: text("type").notNull(),
   currency: text("currency").notNull().default("INR"),
-  openingBalance: numeric("opening_balance", { precision: 12, scale: 2 }).notNull().default("0.00"),
-  isDefault: boolean("is_default").notNull().default(false),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  openingBalance: text("opening_balance").notNull().default("0.00"),
+  isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+  createdAt: createdAt(),
 });
 
-export const walletTransfers = pgTable("wallet_transfers", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+export const walletTransfers = sqliteTable("wallet_transfers", {
+  id: id(),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-  fromWalletId: uuid("from_wallet_id")
+  fromWalletId: text("from_wallet_id")
     .notNull()
     .references(() => wallets.id, { onDelete: "restrict" }),
-  toWalletId: uuid("to_wallet_id")
+  toWalletId: text("to_wallet_id")
     .notNull()
     .references(() => wallets.id, { onDelete: "restrict" }),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: amount("amount"),
   note: text("note"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: createdAt(),
 });
 
-export const recurringTransactions = pgTable("recurring_transactions", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id")
+export const recurringTransactions = sqliteTable("recurring_transactions", {
+  id: id(),
+  userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: amount("amount"),
   category: text("category").notNull(),
   type: text("type").notNull(),
   frequency: text("frequency").notNull(),
   nextDate: text("next_date").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: createdAt(),
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

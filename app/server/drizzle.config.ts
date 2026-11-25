@@ -1,12 +1,8 @@
 import { defineConfig } from "drizzle-kit";
-import * as dotenv from "dotenv";
-dotenv.config();
 
+// Generates SQL migrations for D1; applied with `wrangler d1 migrations apply`.
 export default defineConfig({
   schema: "./src/db/schema.ts",
-  out: "./drizzle",
-  dialect: "postgresql",
-  dbCredentials: {
-    url: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/expense_tracker",
-  },
+  out: "./migrations",
+  dialect: "sqlite",
 });

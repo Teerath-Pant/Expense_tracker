@@ -1,10 +1,10 @@
 import { os } from "@orpc/server";
 import crypto from "crypto";
-import { db } from "./db/index.js";
+import type { DrizzleD1Database } from "drizzle-orm/d1";
 
 // Configured interfaces
 export interface InitialContext {
-  db: typeof db;
+  db: DrizzleD1Database;
   req?: any;
   res?: any;
 }
